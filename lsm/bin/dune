@@ -1,0 +1,4 @@
+(executable
+ (public_name lsm)
+ (name main)
+ (libraries lsm))
