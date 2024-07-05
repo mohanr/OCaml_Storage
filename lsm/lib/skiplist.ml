@@ -27,3 +27,8 @@ let empty_check (skp : ('k, 'v) skip_list) : bool =
   match skp.skpinternal with
   | { sibling = Empty; child = Empty } -> true
   | _ -> false
+
+let create_empty_skiplist : ('k, 'v) skip_list =
+     let head = { sibling = Empty; child = Empty } in
+     let seed = Random.int 1 in
+     { skpseed = seed ; skpinternal = head }
