@@ -1,7 +1,7 @@
 
 open Stdlib
 
-let () = Random.self_init()
+let state = Random.State.make_self_init()
 
 type 'v values =  Int
 type 'k keys =  Int
@@ -19,23 +19,38 @@ type ('k, 'v) node =
      child :  ('k, 'v) node
    }
 
-type ('k, 'v) skip_list  =
-  { skpseed : int ;  (*Seed *)
+type  ( 'k, 'v) skip_list  =
+  { skpstate : Random.State.t;  (*Seed *)
     skpinternal :  ('k, 'v) node }
 
+let ltekey (node  : ('k, 'v ) node) key : bool =
+  match node with
+   | Node {keys = k; _} -> k <= key
+   | Empty  -> false
+   | _  -> true
+
+let ltkey (node  : ('k, 'v ) node) key : bool =
+  match node with
+   | Node {keys = k; _} -> k < key
+   | Empty  -> false
+   | _  -> true
+
+let eqkey (node  : ('k, 'v ) node) key : bool =
+  match node with
+   | Node {keys = k; _} -> k == key
+   | _  -> false
 
 let empty_check (skp : ('k, 'v) skip_list) : bool =
   match skp.skpinternal with
   | Head { sibling = Empty; child = Empty } -> true
   | _ -> false
 
-let create_empty_skiplist : ('k, 'v) skip_list =
+let create_empty_skiplist state : ('k, 'v) skip_list =
      let head = Head { sibling = Empty; child = Empty } in
-     let seed = Random.int 1 in
-     { skpseed = seed ; skpinternal = head }
+     let st = state 1 in
+     { skpstate = st ; skpinternal = head }
 
-
-let rec addlevels k v internal levels : ('k, 'v ) node =
+let rec addlevels k v (internal, levels ): ('k, 'v ) node =
   match levels with
         | levels when levels  > 0  -> create_level k v levels ( splitlevel internal)
         | _  -> internal
@@ -57,3 +72,46 @@ let rec addlevels k v internal levels : ('k, 'v ) node =
        | ns ->
           let (next,r)  = splitlevel ns in
           (next ,  r)
+
+let number (state  : Random.State.t) =
+     let rec randomgen n (state  : Random.State.t) =
+      let b = Random.State.bool state
+      in if b then randomgen (n + 1)  state
+           else (n,   state )
+      in randomgen 0 state
+
+
+let rec insert k v (skp : ('k, 'v) skip_list ) =
+  let (rg, state') = number skp.skpstate in
+  let skplist = addlevels k v (create_skiplist k v rg skp.skpinternal) in
+  { skpstate = state'; skpinternal = skplist }
+  and
+    create_skiplist k v rg (node : ('k, 'v) node) :  ('k, 'v) node*int =
+
+    match node with
+    | Empty -> (Empty, rg)
+    | Head _ -> (Empty, rg)
+    | Node { keys = _; values = _; sibling = s; child = c } ->
+
+      if ( ltkey s k ) then
+        begin
+          match (create_skiplist k v rg s) with
+          | (a, _) ->
+              (Node { keys = k; values = v; sibling = a; child = c }, -1)
+        end
+      else if ( ltekey s k ) then
+        begin
+             let ns = Node { keys = k; values = v; sibling = s; child = c } in
+             (ns, -1)
+        end
+      else
+        begin
+         let (cn, w) = (create_skiplist k v rg c) in
+         if  (w < 0) then
+              (Node { keys = k; values = v; sibling = s; child = cn }, -1)
+         else if  w == 0 then
+              (Node { keys = k; values = v;
+                      sibling =  Node {keys = k; values = v;sibling = s; child = c}; child = cn }, -1)
+         else  (Node {keys = k; values = v;
+                       sibling = Head {sibling = s; child = cn}; child =c}, w - 1)
+        end
