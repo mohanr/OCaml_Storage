@@ -47,7 +47,7 @@ let empty_check (skp : ('k, 'v) skip_list) : bool =
 
 let create_empty_skiplist state : ('k, 'v) skip_list =
      let head = Head { sibling = Empty; child = Empty } in
-     let st = state 1 in
+     let st = state  in
      { skpstate = st ; skpinternal = head }
 
 let rec addlevels k v (internal, levels ): ('k, 'v ) node =

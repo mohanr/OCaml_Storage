@@ -1,2 +1,6 @@
-(test
- (name lsm))
+(library
+ (name lsm_test)
+ (libraries skiplist)
+ (inline_tests)
+ (preprocess (pps ppx_inline_test ppx_assert ppx_expect))
+ (modules lsm_test))

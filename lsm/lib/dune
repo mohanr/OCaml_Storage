@@ -1,2 +1,8 @@
+(include_subdirs unqualified)
+; (include_subdirs unqualified)(env (dev (flags (:standard -warn-error -69-37-34-33-27-32-26-66))))
+
 (library
- (name lsm))
+(name skiplist)
+ (libraries domainslib base batteries)
+ (modules skiplist)
+)
